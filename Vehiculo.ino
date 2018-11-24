@@ -1,6 +1,10 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <NewPing.h>
+#include <Servo.h>
+
+//#include <Timer.h>
+//Timer t;
 
 /*Aqui se configuran los pines donde debemos conectar el sensor de ultrasonido*/
 #define TRIGGER_PIN  D3
@@ -9,12 +13,12 @@
 
 /*Crear el objeto de la clase NewPing*/
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
- 
-const char* ssid = "wpsk";
-const char* password = "b8dea7a5ad9";
-//#include <WiFiClient.h>
-//#include <WiFiServer.h>
-//https://www.arduino.cc/en/Tutorial/Fade
+
+// Declaramos la variable para controlar el servo
+Servo servoMotor;
+
+const char* ssid = "RED";
+const char* password = "CLAVE";
 
 #include "L9110.h"
 L9110 vehiculo(D4,D5,D6,D7);
@@ -30,15 +34,14 @@ void setup() {
   WiFi.begin(ssid, password); 
   while (WiFi.status() != WL_CONNECTED) { 
     delay(1000);
-    Serial.print("Conectando..");
- 
+    Serial.print("Conectando.."); 
   }
 
-  /*pinMode(D4,OUTPUT);
-  pinMode(D5,OUTPUT);
-  pinMode(D6,OUTPUT);
-  pinMode(D7,OUTPUT);
-  L9110 vehiculo(D4,D5,D6,D7);*/
+  // Iniciamos el servo para que empiece a trabajar con el pin 9
+  //servoMotor.attach(D1);
+ 
+  // Inicializamos al ángulo 0 el servomotor
+  servoMotor.write(0);
 }
 
 void loop() {
@@ -120,7 +123,6 @@ void loop() {
   WiFi.forceSleepBegin(0);
   Serial.println("Wifi apagado");
   Serial.print(WiFi.status());
-
   vehiculo.reverse(10,10,500);
   Serial.println("Atrás");
   //delay(1000); 
@@ -128,13 +130,6 @@ void loop() {
   WiFi.forceSleepWake();
   Serial.println("Wifi encendido");
   Serial.print(WiFi.status());*/
-}
-
-void circuito(){
-  vehiculo.forward(120,120,500);
-  vehiculo.reverse(10,10,500);
-  vehiculo.rotate(10,0,500);
-  vehiculo.brake(1000);
 }
 
 void ejecutarMovimiento(String parametros[4]){
@@ -159,7 +154,7 @@ void ejecutarMovimiento(String parametros[4]){
   if(parametros[0].equals("avanzar")){
 
     // controlar distancia
-    if(distancia > 10){
+    if(distancia > 5){
       Serial.println("Avanzando");  
       vehiculo.forward(parametros[1].toInt(),parametros[2].toInt(),parametros[3].toInt());
     }
@@ -192,5 +187,41 @@ void ejecutarMovimiento(String parametros[4]){
     vehiculo.drive(parametros[1].toInt(),parametros[2].toInt(),parametros[3].toInt());
            
   }
+
+  // eventos de cámara
+  else if(parametros[0].equals("girar_camara_detener")){
+    Serial.println("Girando cámara");
+    // configurar giro con velocidad recibida
+    girar_camara_detener();
+           
+  }
+
+  else if(parametros[0].equals("girar_camara_cont")){
+    Serial.println("Girando cámara continuamente");
+    // configurar giro con velocidad recibida
+    //t.every(parametros[1].toInt(), girar_camara_continua);
+    girar_camara_continua(parametros[1].toInt());
+    //t.every(parametros[1].toInt(), pausar);
+           
+  }
+  
+}
+
+void girar_camara_detener() {
+
+   // Desplazamos al ángulo correspondiente
+   servoMotor.write(10);
+   // Hacemos una pausa con el temporizador Timer
+   servoMotor.detach();
+}
+
+void girar_camara_continua(int tiempo_pausa) {
+
+   servoMotor.attach(D1); 
+   // Desplazamos al ángulo correspondiente
+   servoMotor.write(10);
+   // Hacer pausa en giro
+   servoMotor.detach();
+   delay(tiempo_pausa);
   
 }
